@@ -1,16 +1,9 @@
-/*
- * This file is part of the nivo project.
- *
- * Copyright 2016-present, Raphaël Benitte.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-import { useCallback, useMemo, useState, useId } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { area, line } from 'd3-shape'
 import { curveFromProp, useTheme, useValueFormatter } from '@nivo/core'
 import { useOrdinalColorScale, useInheritedColor } from '@nivo/colors'
 import { computeXYScalesForSeries } from '@nivo/scales'
+import uniqueId from 'lodash/uniqueId'
 import { LineDefaultProps } from './props'
 
 export const useLineGenerator = ({ curve }) => {
@@ -93,7 +86,7 @@ export const useSlices = ({ componentId, enableSlices, points, width, height }) 
                     else sliceWidth = x - x0 + (nextSlice[0] - x) / 2
 
                     return {
-                        id: `slice${componentId}${x}`,
+                        id: `slice:${componentId}:${x}`,
                         x0,
                         x,
                         y0: 0,
@@ -139,6 +132,8 @@ export const useSlices = ({ componentId, enableSlices, points, width, height }) 
     }, [componentId, enableSlices, height, points, width])
 }
 
+export const LINE_UNIQUE_ID_PREFIX = 'line'
+
 export const useLine = ({
     data,
     xScale: xScaleSpec = LineDefaultProps.xScale,
@@ -153,15 +148,16 @@ export const useLine = ({
     pointColor = LineDefaultProps.pointColor,
     pointBorderColor = LineDefaultProps.pointBorderColor,
     enableSlices = LineDefaultProps.enableSlicesTooltip,
+    initialHiddenIds = LineDefaultProps.initialHiddenIds,
 }) => {
-    const componentId = useId()
+    const [componentId] = useState(uniqueId(LINE_UNIQUE_ID_PREFIX))
     const formatX = useValueFormatter(xFormat)
     const formatY = useValueFormatter(yFormat)
     const getColor = useOrdinalColorScale(colors, 'id')
     const theme = useTheme()
     const getPointColor = useInheritedColor(pointColor, theme)
     const getPointBorderColor = useInheritedColor(pointBorderColor, theme)
-    const [hiddenIds, setHiddenIds] = useState([])
+    const [hiddenIds, setHiddenIds] = useState(initialHiddenIds ?? [])
 
     const {
         xScale,

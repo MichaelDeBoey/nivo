@@ -36,6 +36,7 @@ import { renderLegendToCanvas } from '@nivo/legends'
 import { useTooltip } from '@nivo/tooltip'
 import { useBar } from './hooks'
 import { BarTotalsData } from './compute/totals'
+import { useComputeLabelLayout } from './compute/common'
 
 type InnerBarCanvasProps<RawDatum extends BarDatum> = Omit<
     BarCanvasProps<RawDatum>,
@@ -102,6 +103,9 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
     gridXValues,
     gridYValues,
 
+    labelPosition = canvasDefaultProps.labelPosition,
+    labelOffset = canvasDefaultProps.labelOffset,
+
     layers = canvasDefaultProps.layers as BarCanvasLayer<RawDatum>[],
     renderBar = (
         ctx,
@@ -114,6 +118,9 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
             label,
             labelColor,
             shouldRenderLabel,
+            labelX,
+            labelY,
+            textAnchor,
         }
     ) => {
         ctx.fillStyle = color
@@ -150,9 +157,9 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
 
         if (shouldRenderLabel) {
             ctx.textBaseline = 'middle'
-            ctx.textAlign = 'center'
+            ctx.textAlign = textAnchor === 'middle' ? 'center' : textAnchor
             ctx.fillStyle = labelColor
-            ctx.fillText(label, x + width / 2, y + height / 2)
+            ctx.fillText(label, x + labelX, y + labelY)
         }
     },
 
@@ -211,6 +218,7 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
         shouldRenderBarLabel,
         legendsWithData,
         barTotals,
+        getColor,
     } = useBar<RawDatum>({
         indexBy,
         label,
@@ -285,6 +293,7 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
             onClick,
             onMouseEnter,
             onMouseLeave,
+            getColor,
         }),
         [
             borderRadius,
@@ -307,10 +316,12 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
             onClick,
             onMouseEnter,
             onMouseLeave,
+            getColor,
         ]
     )
 
     const formatValue = useValueFormatter(valueFormat)
+    const computeLabelLayout = useComputeLabelLayout(layout, reverse, labelPosition, labelOffset)
 
     useEffect(() => {
         const ctx = canvasEl.current?.getContext('2d')
@@ -335,8 +346,8 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
 
                     if (enableGridX) {
                         renderGridLinesToCanvas<string | number>(ctx, {
-                            width,
-                            height,
+                            width: innerWidth,
+                            height: innerHeight,
                             scale: xScale,
                             axis: 'x',
                             values: gridXValues,
@@ -345,8 +356,8 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
 
                     if (enableGridY) {
                         renderGridLinesToCanvas<string | number>(ctx, {
-                            width,
-                            height,
+                            width: innerWidth,
+                            height: innerHeight,
                             scale: yScale,
                             axis: 'y',
                             values: gridYValues,
@@ -375,6 +386,7 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
                         label: getLabel(bar.data),
                         labelColor: getLabelColor(bar) as string,
                         shouldRenderLabel: shouldRenderBarLabel(bar),
+                        ...computeLabelLayout(bar.width, bar.height),
                     })
                 })
             } else if (layer === 'legends') {
@@ -436,6 +448,7 @@ const InnerBarCanvas = <RawDatum extends BarDatum>({
         barTotals,
         enableTotals,
         formatValue,
+        computeLabelLayout,
     ])
 
     const handleMouseHover = useCallback(

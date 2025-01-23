@@ -96,7 +96,7 @@ export interface Point {
     }
 }
 
-export type AccessorFunc = (datum: Point['data']) => string
+export type AccessorFunc = (datum: Point) => string
 
 export type PointMouseHandler = (point: Point, event: React.MouseEvent) => void
 export type PointTouchHandler = (point: Point, event: React.TouchEvent) => void
@@ -193,6 +193,7 @@ export interface LineProps {
     debugMesh?: boolean
 
     enableSlices?: 'x' | 'y' | false
+    initialHiddenIds?: string[]
     debugSlices?: boolean
     sliceTooltip?: SliceTooltip
 

@@ -17,12 +17,14 @@ import { svgDefaultProps } from './props'
 import {
     BarCustomLayerProps,
     BarDatum,
+    BarItemProps,
     BarLayer,
     BarLayerId,
     BarSvgProps,
     ComputedBarDatumWithValue,
 } from './types'
 import { BarTotals } from './BarTotals'
+import { useComputeLabelLayout } from './compute/common'
 
 type InnerBarProps<RawDatum extends BarDatum> = Omit<
     BarSvgProps<RawDatum>,
@@ -67,6 +69,8 @@ const InnerBar = <RawDatum extends BarDatum>({
     labelSkipWidth = svgDefaultProps.labelSkipWidth,
     labelSkipHeight = svgDefaultProps.labelSkipHeight,
     labelTextColor,
+    labelPosition = svgDefaultProps.labelPosition,
+    labelOffset = svgDefaultProps.labelOffset,
 
     markers = svgDefaultProps.markers,
 
@@ -101,6 +105,8 @@ const InnerBar = <RawDatum extends BarDatum>({
     barAriaLabel,
     barAriaLabelledBy,
     barAriaDescribedBy,
+    barAriaHidden,
+    barAriaDisabled,
 
     initialHiddenIds,
 
@@ -127,6 +133,7 @@ const InnerBar = <RawDatum extends BarDatum>({
         toggleSerie,
         legendsWithData,
         barTotals,
+        getColor,
     } = useBar<RawDatum>({
         indexBy,
         label,
@@ -159,6 +166,8 @@ const InnerBar = <RawDatum extends BarDatum>({
         totalsOffset,
     })
 
+    const computeLabelLayout = useComputeLabelLayout(layout, reverse, labelPosition, labelOffset)
+
     const transition = useTransition<
         ComputedBarDatumWithValue<RawDatum>,
         {
@@ -172,6 +181,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             opacity: number
             transform: string
             width: number
+            textAnchor: BarItemProps<RawDatum>['style']['textAnchor']
         }
     >(barsWithValue, {
         keys: bar => bar.key,
@@ -181,8 +191,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             height: 0,
             labelColor: getLabelColor(bar) as string,
             labelOpacity: 0,
-            labelX: bar.width / 2,
-            labelY: bar.height / 2,
+            ...computeLabelLayout(bar.width, bar.height),
             transform: `translate(${bar.x}, ${bar.y + bar.height})`,
             width: bar.width,
             ...(layout === 'vertical'
@@ -199,8 +208,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             height: bar.height,
             labelColor: getLabelColor(bar) as string,
             labelOpacity: 1,
-            labelX: bar.width / 2,
-            labelY: bar.height / 2,
+            ...computeLabelLayout(bar.width, bar.height),
             transform: `translate(${bar.x}, ${bar.y})`,
             width: bar.width,
         }),
@@ -210,8 +218,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             height: bar.height,
             labelColor: getLabelColor(bar) as string,
             labelOpacity: 1,
-            labelX: bar.width / 2,
-            labelY: bar.height / 2,
+            ...computeLabelLayout(bar.width, bar.height),
             transform: `translate(${bar.x}, ${bar.y})`,
             width: bar.width,
         }),
@@ -221,15 +228,15 @@ const InnerBar = <RawDatum extends BarDatum>({
             height: 0,
             labelColor: getLabelColor(bar) as string,
             labelOpacity: 0,
-            labelX: bar.width / 2,
+            ...computeLabelLayout(bar.width, bar.height),
             labelY: 0,
             transform: `translate(${bar.x}, ${bar.y + bar.height})`,
             width: bar.width,
             ...(layout === 'vertical'
                 ? {}
                 : {
+                      ...computeLabelLayout(bar.width, bar.height),
                       labelX: 0,
-                      labelY: bar.height / 2,
                       height: bar.height,
                       transform: `translate(${bar.x}, ${bar.y})`,
                       width: 0,
@@ -257,6 +264,8 @@ const InnerBar = <RawDatum extends BarDatum>({
             ariaLabel: barAriaLabel,
             ariaLabelledBy: barAriaLabelledBy,
             ariaDescribedBy: barAriaDescribedBy,
+            ariaHidden: barAriaHidden,
+            ariaDisabled: barAriaDisabled,
         }),
         [
             borderRadius,
@@ -274,6 +283,8 @@ const InnerBar = <RawDatum extends BarDatum>({
             barAriaLabel,
             barAriaLabelledBy,
             barAriaDescribedBy,
+            barAriaHidden,
+            barAriaDisabled,
         ]
     )
 
@@ -372,6 +383,7 @@ const InnerBar = <RawDatum extends BarDatum>({
     if (layers.includes('totals') && enableTotals) {
         layerById.totals = (
             <BarTotals
+                key="totals"
                 data={barTotals}
                 springConfig={springConfig}
                 animate={animate}
@@ -398,6 +410,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             onClick,
             onMouseEnter,
             onMouseLeave,
+            getColor,
         }),
         [
             commonProps,
@@ -416,6 +429,7 @@ const InnerBar = <RawDatum extends BarDatum>({
             onClick,
             onMouseEnter,
             onMouseLeave,
+            getColor,
         ]
     )
 
